@@ -25,8 +25,23 @@ function closeMobileSidebar() {
     if (sb) sb.classList.remove("open");
     if (bd) bd.classList.remove("open");
 }
+function toggleMobileMoreMenu() {
+    const sheet = document.getElementById("mobile-more-sheet");
+    const bd = document.getElementById("mobile-more-backdrop");
+    if (!sheet) return;
+    const isOpen = sheet.classList.toggle("open");
+    if (bd) bd.classList.toggle("open", isOpen);
+}
+function closeMobileMoreMenu() {
+    const sheet = document.getElementById("mobile-more-sheet");
+    const bd = document.getElementById("mobile-more-backdrop");
+    if (sheet) sheet.classList.remove("open");
+    if (bd) bd.classList.remove("open");
+}
 window.toggleMobileSidebar = toggleMobileSidebar;
 window.closeMobileSidebar = closeMobileSidebar;
+window.toggleMobileMoreMenu = toggleMobileMoreMenu;
+window.closeMobileMoreMenu = closeMobileMoreMenu;
 
 // ── API Helpers ──────────────────────────────────────────────────────────────
 
@@ -133,6 +148,11 @@ function navigate(page) {
     document.querySelectorAll('.nav-item').forEach(el => {
         el.classList.toggle('active', el.dataset.page === page);
     });
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === page);
+    });
+    closeMobileMoreMenu();
+    closeMobileSidebar();
     const titles = {
         'dashboard': 'Dashboard',
         'auto-post': 'Auto Post',
@@ -168,16 +188,25 @@ function navigate(page) {
 // ── Pages ────────────────────────────────────────────────────────────────────
 
 async function renderDashboard(el) {
+    const activeUname = currentActiveUser || (document.getElementById('active-account')?.textContent || '').replace('@', '').trim() || 'poetghazipur61';
     el.innerHTML = `
+        <div class="mobile-dashboard-welcome">
+            <div class="mobile-welcome-badge">✨ InstaBot Automation</div>
+            <div class="mobile-welcome-title">Welcome Back, @${escapeHtml(activeUname)}</div>
+            <div class="mobile-welcome-sub">Let's grow your Instagram audience!</div>
+        </div>
         <div class="stat-grid" id="stat-grid">
             <div class="stat-card"><div class="stat-label">Images Waiting</div><div class="stat-value accent" id="s-img-wait">—</div></div>
             <div class="stat-card"><div class="stat-label">Reels Waiting</div><div class="stat-value accent" id="s-reel-wait">—</div></div>
             <div class="stat-card"><div class="stat-label">Images Posted</div><div class="stat-value success" id="s-img-posted">—</div></div>
             <div class="stat-card"><div class="stat-label">Reels Posted</div><div class="stat-value success" id="s-reel-posted">—</div></div>
-            <div class="stat-card"><div class="stat-label">Failed</div><div class="stat-value error" id="s-failed">—</div></div>
+            <div class="stat-card stat-card-failed"><div class="stat-label">Failed</div><div class="stat-value error" id="s-failed">—</div></div>
         </div>
         <div class="section-card">
-            <div class="section-title">📋 Recent Activity</div>
+            <div class="flex-between" style="margin-bottom:12px">
+                <div class="section-title" style="margin-bottom:0">📋 Recent Activity</div>
+                <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="navigate('logs')">View All &gt;</button>
+            </div>
             <div class="log-viewer" id="dashboard-log">${renderLogEntries(logEntries.slice(0, 15))}</div>
         </div>`;
     try {

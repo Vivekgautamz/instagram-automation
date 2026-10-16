@@ -521,6 +521,68 @@
         </div>
     </div>
 
+    <!-- ── Mobile Bottom Navigation Bar (Appears on Mobile < 1024px) ──────── -->
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button class="mobile-nav-btn active" data-page="dashboard" onclick="navigate('dashboard')" type="button">
+            <span class="mobile-nav-icon">🏠</span>
+            <span class="mobile-nav-label">Home</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="auto-post" onclick="navigate('auto-post')" type="button">
+            <span class="mobile-nav-icon">🚀</span>
+            <span class="mobile-nav-label">Auto Post</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="bot" onclick="navigate('bot')" type="button">
+            <span class="mobile-nav-icon">🤖</span>
+            <span class="mobile-nav-label">Bot</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="queue" onclick="navigate('queue')" type="button">
+            <span class="mobile-nav-icon">📋</span>
+            <span class="mobile-nav-label">Queue</span>
+        </button>
+        <button class="mobile-nav-btn" data-page="more" onclick="toggleMobileMoreMenu()" type="button">
+            <span class="mobile-nav-icon">⋯</span>
+            <span class="mobile-nav-label">More</span>
+        </button>
+    </nav>
+
+    <!-- ── Mobile 'More' Action Sheet / Drawer ─────────────────────────────── -->
+    <div id="mobile-more-backdrop" class="mobile-more-backdrop" onclick="closeMobileMoreMenu()"></div>
+    <div id="mobile-more-sheet" class="mobile-more-sheet">
+        <div class="mobile-more-header">
+            <div class="mobile-more-pill-handle"></div>
+            <div class="mobile-more-title-row">
+                <span class="mobile-more-title">More Tools &amp; Settings</span>
+                <button class="mobile-more-close" onclick="closeMobileMoreMenu()" type="button">✕</button>
+            </div>
+        </div>
+        <div class="mobile-more-grid">
+            <button class="mobile-more-item" onclick="navigate('post-image'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">🖼️</span>
+                <span class="more-item-label">Post Image</span>
+            </button>
+            <button class="mobile-more-item" onclick="navigate('post-reel'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">🎬</span>
+                <span class="more-item-label">Post Reel</span>
+            </button>
+            <button class="mobile-more-item" onclick="navigate('download'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">⬇️</span>
+                <span class="more-item-label">Download</span>
+            </button>
+            <button class="mobile-more-item" onclick="navigate('posted'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">✅</span>
+                <span class="more-item-label">Posted History</span>
+            </button>
+            <button class="mobile-more-item" onclick="navigate('logs'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">📝</span>
+                <span class="more-item-label">Activity Log</span>
+            </button>
+            <button class="mobile-more-item" onclick="navigate('settings'); closeMobileMoreMenu()" type="button">
+                <span class="more-item-icon">⚙️</span>
+                <span class="more-item-label">Settings</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Toast container -->
     <div id="toasts"></div>
 
