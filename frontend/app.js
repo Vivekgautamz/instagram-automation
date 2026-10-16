@@ -549,6 +549,67 @@ let botAccountsList = [];
 let botSelectedAccount = '';
 let botSlideIndex = 0;
 let botForceDuplicate = false;
+let botAutoPost = localStorage.getItem('bot_auto_post') === '1';
+let botMainUrl = '';
+
+function toggleBotAutoPost() {
+    botAutoPost = !botAutoPost;
+    localStorage.setItem('bot_auto_post', botAutoPost ? '1' : '0');
+    toast(`Switched to ${botAutoPost ? 'Automatic (Auto Download & Post)' : 'Manual Review'} Mode`, 'info');
+    if (currentPage === 'bot') {
+        renderInteractiveBot(document.getElementById('page-content'));
+    }
+}
+
+function syncBotUrls(val) {
+    botMainUrl = val;
+    const mainInput = document.getElementById('bot-url-input');
+    const manualInput = document.getElementById('bot-manual-url-input');
+    if (mainInput && mainInput.value !== val) mainInput.value = val;
+    if (manualInput && manualInput.value !== val) manualInput.value = val;
+}
+
+function handleBotUrlPaste(e) {
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text');
+    if (!pasted) return;
+    const url = pasted.trim();
+    syncBotUrls(url);
+    if (botAutoPost && (url.includes('instagram.com/reel/') || url.includes('instagram.com/p/') || url.includes('instagram.com/tv/'))) {
+        setTimeout(() => {
+            startBotWorkflow(true);
+        }, 150);
+    }
+}
+
+function triggerBotSubmit() {
+    const val = botMainUrl || document.getElementById('bot-url-input')?.value?.trim() || document.getElementById('bot-manual-url-input')?.value?.trim() || '';
+    if (!val) {
+        toast('Please paste an Instagram Reel, Photo, or Carousel URL', 'warning');
+        return;
+    }
+    syncBotUrls(val);
+    if (botAutoPost) {
+        startBotWorkflow(true);
+    } else {
+        startBotWorkflow(false);
+    }
+}
+
+function resetBot() {
+    if (botPollTimer) {
+        clearInterval(botPollTimer);
+        botPollTimer = null;
+    }
+    botJob = null;
+    botMainUrl = '';
+    botSlideIndex = 0;
+    botForceDuplicate = false;
+    botEditingCaption = false;
+    botEditingHashtags = false;
+    if (currentPage === 'bot') {
+        renderInteractiveBot(document.getElementById('page-content'));
+    }
+}
 
 function setBotMode(mode) {
     botMode = mode;
@@ -862,33 +923,78 @@ async function renderInteractiveBot(el) {
             </div>
             <div class="account-pill">
                 <span class="dot"></span>
-                <span>@${botSelectedAccount || currentActiveUser}</span>
+                <span>@${(botSelectedAccount || currentActiveUser).toUpperCase()}</span>
             </div>
         </div>
 
-        <!-- URL Input Card -->
-        <div class="bot-input-card">
-            <div class="section-title">🔍 Target Content</div>
-            <label style="font-size:12px;color:var(--text-secondary);font-weight:600">Instagram Post, Carousel, or Reel URL</label>
-            <div class="bot-input-group">
+        <!-- Auto Download & Post Toggle Card -->
+        <div class="bot-toggle-card">
+            <div class="bot-toggle-header">
+                <button type="button" class="btn-bot-toggle ${botAutoPost ? 'on' : 'off'}" onclick="toggleBotAutoPost()" title="Click to switch between Automatic and Manual modes">
+                    <span class="toggle-dot"></span>
+                    <span>${botAutoPost ? '🟢 ON — Automatic' : '🔴 OFF — Manual'}</span>
+                </button>
+                <span class="bot-toggle-title">Auto Download & Post</span>
+                <span class="bot-toggle-acc">@${botSelectedAccount || currentActiveUser}</span>
+            </div>
+
+            <div class="bot-url-label">🔗 REEL / CAROUSEL / PHOTO URL</div>
+            <div class="bot-main-url-container">
                 <input 
                     type="url" 
                     id="bot-url-input" 
-                    class="form-input" 
-                    placeholder="https://www.instagram.com/p/... or https://www.instagram.com/reel/..."
-                    value="${job ? (job.url || '') : ''}"
+                    class="bot-main-url-input" 
+                    placeholder="📋 Paste Instagram URL (Reel, Photo, Carousel 1..N)" 
+                    value="${escapeHtml(botMainUrl || (job ? (job.url || '') : ''))}" 
+                    oninput="syncBotUrls(this.value)" 
+                    onpaste="handleBotUrlPaste(event)" 
+                    onkeydown="if(event.key === 'Enter') triggerBotSubmit()" 
                     ${isAnalyzing || isDownloading || isPublishing ? 'disabled' : ''}
                 />
-                <button 
-                    class="btn btn-primary" 
-                    id="bot-analyze-btn" 
-                    onclick="startBotAnalysis()"
-                    ${isAnalyzing || isDownloading || isPublishing ? 'disabled' : ''}
-                >
-                    ${isAnalyzing ? '⏳ Analyzing Post...' : '🔍 Analyze Post'}
+            </div>
+
+            <div class="bot-mode-hint">
+                ${botAutoPost 
+                    ? `⚡ <strong>Automatic Mode:</strong> Paste URL → Automatically analyzes, downloads &amp; publishes to <strong>@${botSelectedAccount || currentActiveUser}</strong>` 
+                    : `👉 <strong>Manual Mode:</strong> Paste URL → Click 'Analyze Post' below → Edit details &amp; Publish`}
+            </div>
+
+            <div class="bot-action-bar">
+                <button class="btn-bot-action-refresh" onclick="${job ? 'resetBot()' : 'triggerBotSubmit()'}" title="${job ? 'Reset URL' : (botAutoPost ? 'Execute Auto Download & Post' : 'Check URL')}">
+                    <span class="action-icon">🔄</span>
                 </button>
             </div>
         </div>
+
+        <!-- Target Content Review Card (Manual Mode) -->
+        ${!botAutoPost ? `
+        <div class="bot-review-card">
+            <div class="bot-review-header">
+                <h3>🔍 Target Content Review (Manual Mode)</h3>
+                <p>Analyze post metadata before downloading or publishing</p>
+            </div>
+            <div class="bot-review-input-group">
+                <input 
+                    type="url" 
+                    id="bot-manual-url-input" 
+                    class="form-input" 
+                    placeholder="https://www.instagram.com/p/... or https://www.instagram.com/reel/..." 
+                    value="${escapeHtml(botMainUrl || (job ? (job.url || '') : ''))}" 
+                    oninput="syncBotUrls(this.value)" 
+                    onkeydown="if(event.key === 'Enter') startBotWorkflow(false)" 
+                    ${isAnalyzing || isDownloading || isPublishing ? 'disabled' : ''}
+                />
+                <button 
+                    class="btn btn-analyze-white" 
+                    id="bot-analyze-btn" 
+                    onclick="startBotWorkflow(false)" 
+                    ${isAnalyzing || isDownloading || isPublishing ? 'disabled' : ''}
+                >
+                    ${isAnalyzing ? '⏳ Analyzing...' : '🔍 Analyze Post'}
+                </button>
+            </div>
+        </div>
+        ` : ''}
 
         <!-- Repost Mode Selection Card -->
         <div class="bot-mode-card">
@@ -898,7 +1004,7 @@ async function renderInteractiveBot(el) {
                     <input type="radio" class="bot-mode-radio" name="bot-mode-choice" value="repost_as_is" ${botMode === 'repost_as_is' ? 'checked' : ''}>
                     <div>
                         <div class="bot-mode-title">⚡ Repost As-Is (Recommended)</div>
-                        <div class="bot-mode-desc">Preserve original media (Carousels 1..N in order), copy exact original caption & hashtags without AI rewriting, and preserve embedded watermark.</div>
+                        <div class="bot-mode-desc">Preserve original media (Carousels 1..N in order), copy exact original caption &amp; hashtags without AI rewriting, and preserve audio.</div>
                     </div>
                 </div>
                 <div class="bot-mode-option ${botMode === 'ai_generate' ? 'active' : ''}" onclick="setBotMode('ai_generate')">
@@ -1265,43 +1371,49 @@ async function renderInteractiveBot(el) {
     `;
 }
 
-async function startBotAnalysis() {
-    const input = document.getElementById('bot-url-input');
-    const url = input ? input.value.trim() : '';
-    if (!url) {
+async function startBotWorkflow(isAuto) {
+    const autoMode = (typeof isAuto === 'boolean') ? isAuto : botAutoPost;
+    const inputVal = botMainUrl || document.getElementById('bot-url-input')?.value?.trim() || document.getElementById('bot-manual-url-input')?.value?.trim() || '';
+    if (!inputVal) {
         toast('Enter an Instagram post, carousel, or reel URL', 'warning');
         return;
     }
 
-    toast('Searching Instagram content...', 'info');
+    toast(autoMode ? '⚡ Auto Download & Post: Processing content...' : 'Searching & analyzing Instagram content...', 'info');
     botSlideIndex = 0;
     botForceDuplicate = false;
     try {
         const res = await api('/api/bot/analyze', { 
             method: 'POST', 
             body: { 
-                url, 
+                url: inputVal, 
                 account: botSelectedAccount || currentActiveUser, 
-                mode: botMode 
+                mode: botMode,
+                auto_post: autoMode
             } 
         });
         botJob = {
             job_id: res.job_id,
-            url: url,
+            url: inputVal,
             mode: botMode,
             status: 'analyzing',
             step: 'url_received',
+            auto_post: autoMode,
             progress: 20,
             message: 'URL received',
-            logs: [{ timestamp: new Date().toLocaleTimeString(), message: 'URL received' }]
+            logs: [{ timestamp: new Date().toLocaleTimeString(), message: `URL received (${autoMode ? 'Automatic Mode' : 'Manual Mode'})` }]
         };
         startPollingBot(res.job_id);
         if (currentPage === 'bot') {
             renderInteractiveBot(document.getElementById('page-content'));
         }
     } catch (e) {
-        toast(`Analysis failed: ${e.message || e}`, 'error');
+        toast(`Workflow failed: ${e.message || e}`, 'error');
     }
+}
+
+function startBotAnalysis(isAuto = false) {
+    return startBotWorkflow(isAuto);
 }
 
 function startPollingBot(jobId) {

@@ -1146,11 +1146,13 @@ async def api_bot_analyze(body: dict):
         raise HTTPException(400, "Instagram Profile or Reel/Post URL is required")
 
     job_id = str(uuid.uuid4())[:8]
+    auto_post = bool(body.get("auto_post", False))
     job = {
         "job_id": job_id,
         "url": url,
         "mode": body.get("mode", "repost_as_is"),
         "account": account or get_active_account(),
+        "auto_post": auto_post,
         "status": "analyzing",
         "step": "url_received",
         "progress": 20,
@@ -1163,7 +1165,7 @@ async def api_bot_analyze(body: dict):
         "logs": []
     }
     bot_jobs[job_id] = job
-    add_bot_log(job, "URL received")
+    add_bot_log(job, f"URL received ({'Automatic Auto-Post' if auto_post else 'Manual Review'} Mode)")
 
     def _run_analyze():
         try:
@@ -1175,16 +1177,84 @@ async def api_bot_analyze(body: dict):
             res = analyze_reel(url, limit=5, account=job["account"])
             candidate = res["top_candidate"]
             job["candidate"] = candidate
-            job["status"] = "candidate_found"
-            job["step"] = "candidate_found"
-            job["progress"] = 50
             type_label = candidate.get("post_type", "content").capitalize()
             item_info = f" ({candidate.get('item_count', 1)} items)" if candidate.get("post_type") == "carousel" else ""
             add_bot_log(job, f"{type_label} found{item_info}: {candidate['url']} (Likes: {candidate['likes_formatted']})", "success")
+
+            from bot_service import is_source_already_posted
+            reel_id = candidate.get("id") or ""
+            target_acc = job["account"]
+
+            if auto_post and reel_id and is_source_already_posted(reel_id, target_acc):
+                err = f"Content was already published to @{target_acc}. Duplicate skipped."
+                job["status"] = "failed"
+                job["error"] = err
+                add_bot_log(job, f"⚠️ Duplicate prevention: {err}", "warning")
+                return
+
+            job["status"] = "downloading"
+            job["step"] = "downloading"
+            job["progress"] = 65
+            add_bot_log(job, f"{'Auto-mode' if auto_post else 'Manual-mode'}: Downloading original media (preserving order & audio)...")
+
+            from bot_service import download_candidate, publish_bot_content
+            dl_info = download_candidate(candidate["url"], custom_id=candidate["id"], source_candidate=candidate)
+            job["download"] = dl_info
+
+            count_str = f" ({dl_info.get('item_count', 1)} items in original order)" if dl_info.get("post_type") == "carousel" else ""
+            add_bot_log(job, f"Downloaded{count_str}: {dl_info['filename']} ({dl_info.get('size_formatted', '')})", "success")
+
+            # Preserve exact original caption & hashtags
+            orig_cap = candidate.get("original_caption", "")
+            orig_hash = candidate.get("original_hashtags", "")
+            full_text = f"{orig_cap}\n\n{orig_hash}".strip() if (orig_cap and orig_hash) else (orig_cap or orig_hash)
+            job["analysis"] = {
+                "status": "as_is",
+                "caption": orig_cap,
+                "hashtags": orig_hash,
+                "full": full_text,
+                "is_repost_as_is": True
+            }
+
+            if not auto_post:
+                # Manual mode: Media & metadata downloaded, ready for user review & edits
+                job["status"] = "ready_to_publish"
+                job["step"] = "ready_to_publish"
+                job["progress"] = 75
+                add_bot_log(job, "✓ Ready for review: media downloaded, caption and audio checked. Edit details or click Publish when ready.", "info")
+                return
+
+            # ── AUTOMATIC MODE: Proceed directly to publishing ──────────────
+            job["status"] = "publishing"
+            job["step"] = "publishing"
+            job["progress"] = 85
+            add_bot_log(job, f"Auto-mode: Publishing to @{target_acc}...")
+
+            media_files = dl_info.get("media_files") or [dl_info["new_reel_path"]]
+            post_type = dl_info.get("post_type", candidate.get("post_type", "reel"))
+
+            pub_res = publish_bot_content(
+                media_files=media_files,
+                caption=orig_cap,
+                hashtags=orig_hash,
+                target_account=target_acc,
+                post_type=post_type,
+                mode="repost_as_is",
+                reel_id=reel_id,
+                original_url=candidate.get("url", ""),
+                audio_status=dl_info.get("audio_status", candidate.get("audio_status", "")),
+                force=False
+            )
+            job["status"] = "published"
+            job["step"] = "published"
+            job["progress"] = 100
+            job["publish"] = pub_res
+            add_bot_log(job, f"✓ {type_label.upper()} PUBLISHED SUCCESSFULLY: {pub_res.get('instagram_url')}", "success")
+
         except Exception as e:
             job["status"] = "failed"
             job["error"] = str(e)
-            add_bot_log(job, f"Analysis failed: {e}", "error")
+            add_bot_log(job, f"Process failed: {e}", "error")
 
     threading.Thread(target=_run_analyze, daemon=True).start()
     return {"status": "started", "job_id": job_id}
