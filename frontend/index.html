@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Instagram Automation Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,41 +11,45 @@
 </head>
 <body>
     <div id="app">
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
         <!-- Sidebar -->
         <aside id="sidebar">
             <div class="sidebar-brand">
                 <span class="brand-icon">📸</span>
                 <span class="brand-text">InstaBot</span>
+                <button class="mobile-close-sidebar" onclick="closeMobileSidebar()" aria-label="Close menu">✕</button>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
+                <a href="#" class="nav-item active" data-page="dashboard" onclick="closeMobileSidebar()">
                     <span class="nav-icon">📊</span><span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item" data-page="auto-post">
+                <a href="#" class="nav-item" data-page="auto-post" onclick="closeMobileSidebar()">
                     <span class="nav-icon">🚀</span><span>Auto Post</span>
                 </a>
-                <a href="#" class="nav-item" data-page="bot">
+                <a href="#" class="nav-item" data-page="bot" onclick="closeMobileSidebar()">
                     <span class="nav-icon">🤖</span><span>Interactive Bot</span>
                 </a>
-                <a href="#" class="nav-item" data-page="post-image">
+                <a href="#" class="nav-item" data-page="post-image" onclick="closeMobileSidebar()">
                     <span class="nav-icon">🖼️</span><span>Post Image</span>
                 </a>
-                <a href="#" class="nav-item" data-page="post-reel">
+                <a href="#" class="nav-item" data-page="post-reel" onclick="closeMobileSidebar()">
                     <span class="nav-icon">🎬</span><span>Post Reel</span>
                 </a>
-                <a href="#" class="nav-item" data-page="download">
+                <a href="#" class="nav-item" data-page="download" onclick="closeMobileSidebar()">
                     <span class="nav-icon">⬇️</span><span>Download</span>
                 </a>
-                <a href="#" class="nav-item" data-page="queue">
+                <a href="#" class="nav-item" data-page="queue" onclick="closeMobileSidebar()">
                     <span class="nav-icon">📋</span><span>Queue</span>
                 </a>
-                <a href="#" class="nav-item" data-page="posted">
+                <a href="#" class="nav-item" data-page="posted" onclick="closeMobileSidebar()">
                     <span class="nav-icon">✅</span><span>Posted</span>
                 </a>
-                <a href="#" class="nav-item" data-page="logs">
+                <a href="#" class="nav-item" data-page="logs" onclick="closeMobileSidebar()">
                     <span class="nav-icon">📝</span><span>Activity Log</span>
                 </a>
-                <a href="#" class="nav-item" data-page="settings">
+                <a href="#" class="nav-item" data-page="settings" onclick="closeMobileSidebar()">
                     <span class="nav-icon">⚙️</span><span>Settings</span>
                 </a>
             </nav>
@@ -54,7 +58,14 @@
         <!-- Main Content -->
         <main id="main">
             <header id="topbar">
-                <h1 id="page-title">Dashboard</h1>
+                <div class="topbar-left">
+                    <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+                        <span class="hamburger-bar"></span>
+                        <span class="hamburger-bar"></span>
+                        <span class="hamburger-bar"></span>
+                    </button>
+                    <h1 id="page-title">Dashboard</h1>
+                </div>
                 <div class="topbar-right">
                     <div class="account-badge" id="account-badge">
                         <span class="status-dot connected"></span>

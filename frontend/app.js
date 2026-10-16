@@ -2,7 +2,7 @@
    Instagram Automation Dashboard — Frontend Application
    ══════════════════════════════════════════════════════════════════════════ */
 
-const API = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http') && window.location.port === '8501') ? '' : 'http://127.0.0.1:8501';
+const API = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')) ? '' : 'http://127.0.0.1:8501';
 let currentPage = 'dashboard';
 let ws = null;
 let logEntries = [];
@@ -10,6 +10,23 @@ let autoPostStatus = { running: false };
 let selectedAutoPostAccount = '';
 let selectedAutoPostMode = 'all'; // 'all' (Images + Reels), 'images', 'reels'
 let autoPostAccountsList = [];
+
+// ── Mobile Navigation Helpers ────────────────────────────────────────────────
+function toggleMobileSidebar() {
+    const sb = document.getElementById("sidebar");
+    const bd = document.getElementById("sidebar-backdrop");
+    if (!sb) return;
+    const isOpen = sb.classList.toggle("open");
+    if (bd) bd.classList.toggle("open", isOpen);
+}
+function closeMobileSidebar() {
+    const sb = document.getElementById("sidebar");
+    const bd = document.getElementById("sidebar-backdrop");
+    if (sb) sb.classList.remove("open");
+    if (bd) bd.classList.remove("open");
+}
+window.toggleMobileSidebar = toggleMobileSidebar;
+window.closeMobileSidebar = closeMobileSidebar;
 
 // ── API Helpers ──────────────────────────────────────────────────────────────
 
