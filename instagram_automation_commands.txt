@@ -1,0 +1,32 @@
+Instagram Automation PowerShell Commands
+===========================================
+
+Action                         PowerShell Command
+-------------------------------------------------
+ open to  	dashboard				.\commands.ps1 dashboard
+
+Post Image                          .\commands.ps1 post-image
+
+Post Reel                           .\commands.ps1 post-reel
+
+Interactive Bot                     .\commands.ps1 bot
+(Download & Post)  
+
+Download Any URL                    .\commands.ps1 download "<url>"
+(Reel or Photo) 
+
+Help Menu                            .\commands.ps1 help
+
+
+.\commands.ps1 add-account    (your_new_username)
+
+Enter Instagram password for (@your_new_username:)
+Enter Instagram password for( @your_new_username:)
+
+
+
+ AVAILABLE INSTAGRAM ACCOUNTS	     .\commands.ps1 accounts
+ 
+swtich to psychology.yaarr          .\commands.ps1 use psychology.yaarr
+	
+swtich to  poetghazipur61		.\commands.ps1 use poetghazipur61

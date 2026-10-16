@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Automation Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-icon">📸</span>
+                <span class="brand-text">InstaBot</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span><span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="auto-post">
+                    <span class="nav-icon">🚀</span><span>Auto Post</span>
+                </a>
+                <a href="#" class="nav-item" data-page="bot">
+                    <span class="nav-icon">🤖</span><span>Interactive Bot</span>
+                </a>
+                <a href="#" class="nav-item" data-page="post-image">
+                    <span class="nav-icon">🖼️</span><span>Post Image</span>
+                </a>
+                <a href="#" class="nav-item" data-page="post-reel">
+                    <span class="nav-icon">🎬</span><span>Post Reel</span>
+                </a>
+                <a href="#" class="nav-item" data-page="download">
+                    <span class="nav-icon">⬇️</span><span>Download</span>
+                </a>
+                <a href="#" class="nav-item" data-page="queue">
+                    <span class="nav-icon">📋</span><span>Queue</span>
+                </a>
+                <a href="#" class="nav-item" data-page="posted">
+                    <span class="nav-icon">✅</span><span>Posted</span>
+                </a>
+                <a href="#" class="nav-item" data-page="logs">
+                    <span class="nav-icon">📝</span><span>Activity Log</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span><span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main">
+            <header id="topbar">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="topbar-right">
+                    <div class="account-badge" id="account-badge">
+                        <span class="status-dot connected"></span>
+                        <span id="active-account">@loading...</span>
+                        <select id="account-select" class="account-select"></select>
+                    </div>
+                    <button class="btn-add-account-topbar" onclick="openSessionManagerModal()" title="Add Instagram Account">
+                        ＋ Add Account
+                    </button>
+                </div>
+            </header>
+            <div id="page-content">
+                <!-- Dynamic content rendered by app.js -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ── Add & Verify Instagram Account Modal ─────────────────────────────── -->
+    <div id="account-connect-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeAccountConnectModal()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <!-- Step 1: Add Account Form -->
+            <div id="acc-step-form">
+                <div class="modal-header">
+                    <div>
+                        <div class="modal-title">
+                            <span style="font-size:20px">📸</span>
+                            <span>Add Instagram Account</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">
+                            Link an account to enable automated scheduling & publishing.
+                        </div>
+                    </div>
+                    <button class="btn-close-modal" onclick="closeAccountConnectModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal-acc-username">Instagram Username</label>
+                        <input type="text" class="form-input" id="modal-acc-username" placeholder="@newusername"
+                               oninput="handleModalUsernameChange(this.value)" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-acc-display">Display Name <span style="font-size:11px;color:var(--text-muted);font-weight:normal;text-transform:none">(optional label)</span></label>
+                        <input type="text" class="form-input" id="modal-acc-display" placeholder="e.g. My Brand Account">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-acc-session">Session Storage File <span style="font-size:11px;color:var(--text-muted);font-weight:normal;text-transform:none">(auto-isolated)</span></label>
+                        <input type="text" class="form-input input-readonly" id="modal-acc-session" readonly
+                               value="sessions/newusername.json">
+                    </div>
+                    
+                    <label class="checkbox-card" style="margin-top:2px">
+                        <input type="checkbox" id="modal-acc-set-active" checked style="accent-color:#6366f1;width:18px;height:18px;cursor:pointer">
+                        <div style="flex:1">
+                            <div style="font-size:13.5px;font-weight:600;color:#f8fafc">Set as active account</div>
+                            <div style="font-size:11.5px;color:var(--text-secondary)">Automatically select this account for immediate posting</div>
+                        </div>
+                    </label>
+
+                    <div id="modal-acc-form-msg" style="display:none;margin-top:8px"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" onclick="closeAccountConnectModal()">Cancel</button>
+                    <button class="btn btn-primary" id="btn-modal-verify-connect" onclick="submitModalVerifyAndConnect()">
+                        🔐 Verify & Connect
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Verification In Progress -->
+            <div id="acc-step-loading" style="display:none;">
+                <div class="modal-body text-center" style="padding:48px 24px;text-align:center">
+                    <div style="font-size:42px;animation:spin 1.5s linear infinite;display:inline-block;margin-bottom:16px">🔄</div>
+                    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px" id="modal-loading-title">Verifying Account...</div>
+                    <div style="font-size:13px;color:var(--text-secondary);max-width:340px;margin:0 auto;line-height:1.5" id="modal-loading-desc">
+                        Checking session validity and live credentials with Instagram...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2b: Authentication Required -->
+            <div id="acc-step-auth" style="display:none;">
+                <div class="modal-header">
+                    <div class="modal-title">🔐 Authentication Required</div>
+                    <button class="btn-close-modal" onclick="closeAccountConnectModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="auth-notice-card" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;display:flex;gap:12px">
+                        <div style="font-size:22px">⚠️</div>
+                        <div>
+                            <div style="font-weight:700;font-size:13.5px;color:#fbbf24;margin-bottom:4px" id="auth-notice-title">No active session found</div>
+                            <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.4" id="auth-notice-desc">
+                                Instagram account not authenticated as <strong id="auth-target-user" style="color:var(--text)">@newusername</strong>.
+                                Authenticate below to generate an encrypted session:
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group-auth-password">
+                        <label>Instagram Password</label>
+                        <input type="password" class="form-input" id="modal-acc-password" placeholder="Enter Instagram password" autocomplete="current-password">
+                        <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px;line-height:1.4">
+                            🔒 Password is used once to authenticate and is <strong>never stored</strong> in accounts.json or on disk.
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group-auth-2fa" style="display:none">
+                        <label>2FA Verification Code</label>
+                        <input type="text" class="form-input" id="modal-acc-2fa" placeholder="6-digit security code" maxlength="8">
+                        <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px">Enter the code from SMS or your Authenticator App.</div>
+                    </div>
+
+                    <div id="modal-acc-auth-msg" style="display:none;margin-top:12px"></div>
+
+                    <div style="display:flex;align-items:center;margin:18px 0 12px 0;color:var(--text-muted);font-size:11px;font-weight:700;letter-spacing:0.5px">
+                        <span style="flex:1;height:1px;background:var(--border)"></span>
+                        <span style="padding:0 10px">OR CLI / EXISTING SESSION</span>
+                        <span style="flex:1;height:1px;background:var(--border)"></span>
+                    </div>
+
+                    <div style="background:var(--bg-main);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px">
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">
+                            Place session into <code id="cli-session-path" style="color:var(--accent);font-family:monospace">sessions/username.json</code> or run:
+                        </div>
+                        <code id="cli-command-badge" style="display:block;background:rgba(0,0,0,0.4);padding:8px 10px;border-radius:6px;font-family:monospace;font-size:12px;color:#a5b4fc;word-break:break-all">
+                            python account_manager.py login username
+                        </code>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="btn-modal-do-login" onclick="submitModalLogin()">
+                        🔐 Authenticate & Connect
+                    </button>
+                    <button class="btn btn-ghost" onclick="recheckModalSession()">
+                        🔄 Check Session Again
+                    </button>
+                    <button class="btn btn-ghost" onclick="showModalStep('form')">Back</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Success Connected -->
+            <div id="acc-step-success" style="display:none;">
+                <div class="modal-header">
+                    <div class="modal-title" style="color:var(--success)">✅ Account Connected</div>
+                    <button class="btn-close-modal" onclick="closeAccountConnectModal()">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-sm);padding:20px;text-align:center;margin-bottom:16px">
+                        <div style="font-size:36px;margin-bottom:8px">🎉</div>
+                        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px" id="modal-success-username">@newusername</div>
+                        
+                        <div style="display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto;text-align:left;background:rgba(0,0,0,0.25);padding:12px 16px;border-radius:8px;font-size:13px">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <span style="color:var(--text-secondary)">Status:</span>
+                                <span style="font-weight:700;color:var(--success)">🟢 CONNECTED</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <span style="color:var(--text-secondary)">Session:</span>
+                                <span style="font-family:monospace;font-size:12px;color:var(--accent)" id="modal-success-session">sessions/newusername.json</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:14px;margin-bottom:6px">
+                        <label class="checkbox-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;color:var(--text)">
+                            <input type="checkbox" id="modal-success-set-active" checked style="accent-color:var(--accent);width:17px;height:17px">
+                            <span>Make this my active account</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:700" onclick="finishAccountConnect()">
+                        ✓ Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Import Session ID Modal ── -->
+    <div id="account-import-session-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeImportSessionModal()">
+        <div class="modal-dialog" style="max-width:480px" role="dialog" aria-modal="true" aria-label="Import Instagram session">
+            <div class="modal-header">
+                <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+                    <span>🔐</span>
+                    <span id="import-session-title">Reconnect Account</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeImportSessionModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:14px;color:var(--text-secondary);font-size:13.5px;line-height:1.5">
+                    Import an Instagram session ID cookie for <strong id="import-session-user" style="color:var(--text)">@account</strong> only.
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:#fca5a5;display:flex;align-items:flex-start;gap:8px">
+                    <span style="font-size:14px">🛡️</span>
+                    <div>
+                        <strong>Strict Account Isolation:</strong> The session is verified directly with Instagram. It will only be saved to <code id="import-session-file" style="color:#fdba74">sessions/account.json</code> if the authenticated Instagram user strictly matches.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+                        <span>Instagram Session ID (Cookie Value)</span>
+                        <button type="button" class="btn-link" style="font-size:11.5px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0" onclick="toggleImportSessionVisibility()">Show/Hide</button>
+                    </label>
+                    <div style="position:relative">
+                        <input type="password" class="form-input" id="import-session-input" placeholder="Paste session ID (starts with your user ID digits)" autocomplete="off" style="font-family:monospace;padding-right:36px;font-size:12.5px" onkeydown="if(event.key==='Enter')saveImportedSession()">
+                    </div>
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px;line-height:1.4">
+                        💡 Find in browser: DevTools (F12) → <em>Application / Storage</em> → <em>Cookies</em> → <em>https://www.instagram.com</em> → copy <code>sessionid</code> value.
+                    </div>
+                </div>
+
+                <div id="import-session-error" style="display:none;margin-top:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:10px 12px;border-radius:6px;font-size:12.5px;line-height:1.4"></div>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-ghost" id="btn-import-cancel" onclick="closeImportSessionModal()">Cancel</button>
+                <button class="btn btn-primary" id="btn-import-save" onclick="saveImportedSession()" style="min-width:130px">Save & Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Reconnect Instagram Account Modal ── -->
+    <div id="account-reconnect-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeReconnectModal()">
+        <div class="modal-dialog" style="max-width:480px" role="dialog" aria-modal="true" aria-label="Reconnect Instagram Account">
+            <div class="modal-header">
+                <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+                    <span>🔄</span>
+                    <span id="reconnect-modal-title">Reconnect Instagram Account</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeReconnectModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:14px;color:var(--text-secondary);font-size:13.5px;line-height:1.5">
+                    Reauthenticate <strong id="reconnect-target-user" style="color:var(--text)">@account</strong> to restore your expired Instagram session securely.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Instagram Username</label>
+                    <input type="text" class="form-input" id="reconnect-user-display" readonly style="opacity:0.85;background:var(--bg-input,#18181b);cursor:not-allowed">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Instagram Password</label>
+                    <input type="password" class="form-input" id="reconnect-password" placeholder="Enter password to reauthenticate" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAccountReconnect()">
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px">
+                        🔒 Used once to authenticate and generate a session. Never saved to disk or logs.
+                    </div>
+                </div>
+
+                <div class="form-group" id="reconnect-group-2fa" style="display:none;">
+                    <label class="form-label" style="color:#fbbf24">Two-Factor Authentication (2FA) Code</label>
+                    <input type="text" class="form-input" id="reconnect-2fa" placeholder="6-digit authentication code" maxlength="10" autocomplete="one-time-code" style="font-size:15px;letter-spacing:3px;text-align:center" onkeydown="if(event.key==='Enter')submitAccountReconnect()">
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-top:5px">
+                        Enter the code from your authenticator app (Google Authenticator / Duo) or SMS.
+                    </div>
+                </div>
+
+                <div id="reconnect-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:6px;font-size:12.5px;line-height:1.4"></div>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-ghost" id="btn-reconnect-cancel" onclick="closeReconnectModal()">Cancel</button>
+                <button class="btn btn-primary" id="btn-reconnect-submit" onclick="submitAccountReconnect()" style="min-width:140px;background:var(--accent)">🔄 Reconnect & Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Unified Instagram Account & Session Manager Modal (Screenshots 2-5) ── -->
+    <div id="session-manager-modal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeSessionManagerModal()">
+        <div class="session-manager-dialog" role="dialog" aria-modal="true" aria-label="Instagram Account & Session Manager">
+            <div class="modal-header" style="padding-bottom:12px;border-bottom:none">
+                <div class="modal-title" style="display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#ffffff">
+                    <span>📸</span>
+                    <span>Instagram Account & Session Manager</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeSessionManagerModal()">✕</button>
+            </div>
+
+            <!-- Segmented Tabs Navigation (Screenshots 2-5) -->
+            <div class="session-manager-tabs">
+                <button class="sm-tab-btn active" id="sm-tab-cookie" onclick="switchSmTab('cookie')">
+                    <span>🍪</span> Session Cookie
+                </button>
+                <button class="sm-tab-btn" id="sm-tab-password" onclick="switchSmTab('password')">
+                    <span>🔐</span> Password + 2FA
+                </button>
+                <button class="sm-tab-btn" id="sm-tab-otp" onclick="switchSmTab('otp')">
+                    <span>🔑</span> OTP / 2FA Code
+                </button>
+                <button class="sm-tab-btn" id="sm-tab-json" onclick="switchSmTab('json')">
+                    <span>📄</span> Session JSON
+                </button>
+                <button class="sm-tab-btn" id="sm-tab-meta" onclick="switchSmTab('meta')">
+                    <span>🌐</span> Meta OAuth
+                </button>
+            </div>
+
+            <!-- TAB 1: Session Cookie (Screenshot 5) -->
+            <div id="sm-panel-cookie" class="sm-panel" style="display:block">
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">INSTAGRAM USERNAME</label>
+                    <input type="text" class="sm-form-input" id="sm-cookie-username" placeholder="poetghazipur61" autocomplete="off">
+                </div>
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">SESSION ID COOKIE (RECOMMENDED - BYPASSES IP CHALLENGES)</label>
+                    <input type="password" class="sm-form-input" id="sm-cookie-sessionid" placeholder="Paste browser 'sessionid' cookie value here" autocomplete="off">
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:7px;line-height:1.4">
+                        💡 Tip: From Instagram.com → Inspect → Application → Cookies → copy sessionid value.
+                    </div>
+                </div>
+                <label class="sm-checkbox-label">
+                    <input type="checkbox" id="sm-cookie-set-active" checked>
+                    <span>Set as Active Account for Reels Auto-Posting</span>
+                </label>
+                <div id="sm-cookie-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:6px;font-size:12.5px"></div>
+                <div class="modal-footer" style="padding-top:20px;border-top:none;display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-outline-dark" onclick="closeSessionManagerModal()">Cancel</button>
+                    <button class="btn btn-white-pill" id="sm-cookie-btn" onclick="submitSmCookie()">
+                        🍪 Accept & Create Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 2: Password + 2FA (Screenshot 4) -->
+            <div id="sm-panel-password" class="sm-panel" style="display:none">
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">INSTAGRAM USERNAME</label>
+                    <input type="text" class="sm-form-input" id="sm-pwd-username" placeholder="poetghazipur61" autocomplete="off">
+                </div>
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">INSTAGRAM PASSWORD</label>
+                    <input type="password" class="sm-form-input" id="sm-pwd-password" placeholder="Your Instagram Password" autocomplete="current-password">
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:7px;line-height:1.4">
+                        🔒 Passwords are used once to authenticate with Instagram and never stored insecurely.
+                    </div>
+                </div>
+                <label class="sm-checkbox-label">
+                    <input type="checkbox" id="sm-pwd-set-active" checked>
+                    <span>Set as Active Account for Reels Auto-Posting</span>
+                </label>
+                <div id="sm-pwd-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:6px;font-size:12.5px"></div>
+                <div class="modal-footer" style="padding-top:20px;border-top:none;display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-outline-dark" onclick="closeSessionManagerModal()">Cancel</button>
+                    <button class="btn btn-white-pill" id="sm-pwd-btn" onclick="submitSmPassword()">
+                        🔐 Accept & Authenticate
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: OTP / 2FA Code (Step 2 Verification) -->
+            <div id="sm-panel-otp" class="sm-panel" style="display:none">
+                <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+                    <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:4px">
+                        Step 2 · Verify your login challenge
+                    </div>
+                    <div style="font-size:12px;color:#cbd5e1;line-height:1.4">
+                        <strong>How it works:</strong> First start login for this account. When Instagram requests verification, enter the current code from the requested authentication method.
+                    </div>
+                </div>
+
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">INSTAGRAM USERNAME</label>
+                    <input type="text" class="sm-form-input" id="sm-otp-username" placeholder="poetghazipur61" autocomplete="off" oninput="checkPendingChallenge(this.value)">
+                    <div id="sm-otp-challenge-indicator" style="font-size:11.5px;color:#60a5fa;margin-top:5px;display:none"></div>
+                </div>
+
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">6-DIGIT VERIFICATION CODE</label>
+                    <input type="text" class="sm-form-input" id="sm-otp-code" placeholder="123456" maxlength="8" autocomplete="one-time-code" style="font-size:18px;letter-spacing:6px;text-align:center;font-weight:700;font-family:monospace">
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:7px;line-height:1.4">
+                        Codes expire quickly. Only submit a code for your own pending login attempt.
+                    </div>
+                </div>
+
+                <div id="sm-otp-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:6px;font-size:12.5px"></div>
+
+                <div class="modal-footer" style="padding-top:20px;border-top:none;display:flex;gap:10px;justify-content:space-between;align-items:center">
+                    <button class="btn btn-outline-dark" onclick="switchSmTab('password')">
+                        ← Back to Password + 2FA
+                    </button>
+                    <button class="btn btn-white-pill" id="sm-otp-btn" onclick="submitSmOtp()">
+                        🔑 Accept OTP & Verify Session
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 4: Session JSON (Screenshot 3) -->
+            <div id="sm-panel-json" class="sm-panel" style="display:none">
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">INSTAGRAM USERNAME</label>
+                    <input type="text" class="sm-form-input" id="sm-json-username" placeholder="poetghazipur61" autocomplete="off">
+                </div>
+                <div class="form-group mb-16">
+                    <label class="sm-form-label">SESSION JSON DICTIONARY</label>
+                    <textarea class="sm-form-input" id="sm-json-content" rows="6" placeholder='{"authorization_data": {"ds_user_id": "..."}, "cookies": {...}}' style="font-family:monospace;font-size:12px;resize:vertical"></textarea>
+                    <div style="font-size:11.5px;color:#94a3b8;margin-top:7px">
+                        Paste full session dump JSON exported from instagrapi or another session file.
+                    </div>
+                </div>
+                <label class="sm-checkbox-label">
+                    <input type="checkbox" id="sm-json-set-active" checked>
+                    <span>Set as Active Account for Reels Auto-Posting</span>
+                </label>
+                <div id="sm-json-msg" style="display:none;margin-top:12px;padding:10px 12px;border-radius:6px;font-size:12.5px"></div>
+                <div class="modal-footer" style="padding-top:20px;border-top:none;display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-outline-dark" onclick="closeSessionManagerModal()">Cancel</button>
+                    <button class="btn btn-white-pill" id="sm-json-btn" onclick="submitSmJson()">
+                        📄 Accept & Save Session JSON
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 5: Meta OAuth (Official Graph API) -->
+            <div id="sm-panel-meta" class="sm-panel" style="display:none">
+                <div class="meta-oauth-card">
+                    <div class="meta-oauth-title">Meta Graph API & Instagram Business Login</div>
+                    <div class="meta-oauth-desc">
+                        Official Meta Developer API configuration for direct video & reel publishing.
+                    </div>
+                </div>
+
+                <div id="meta-status-container" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:10px;padding:14px;margin-bottom:16px">
+                    <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#6ee7b7;font-size:13.5px;margin-bottom:10px">
+                        <span>🟢</span> <span>Meta Graph API Configured & Verified (2 Accounts Active)</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:#cbd5e1;line-height:1.6">
+                        <div style="background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <strong>@poetghazipur61</strong>
+                                <span style="font-size:11px;background:#10b98122;color:#6ee7b7;padding:2px 8px;border-radius:12px;border:1px solid #10b98155">● Active / Verified</span>
+                            </div>
+                            <div>IG User ID: <code style="color:#fdba74">17841476541733844</code></div>
+                            <div>Token: <code style="color:#94a3b8">IGAAQKcbN7Cg...9laSQZDZD</code></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <strong>@forevermoments.web</strong>
+                                <span style="font-size:11px;background:#10b98122;color:#6ee7b7;padding:2px 8px;border-radius:12px;border:1px solid #10b98155">● Active / Verified</span>
+                            </div>
+                            <div>IG User ID: <code style="color:#fdba74">17841431242353329</code></div>
+                            <div>Token: <code style="color:#94a3b8">IGAAQKcbN7Cg...-IVQZDZD</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-size:12px;color:#94a3b8;line-height:1.5;background:#080c16;padding:12px 14px;border-radius:8px;border:1px solid #1a2234;margin-bottom:16px">
+                    ℹ️ Official Meta Graph API token is active. Your account is verified for publishing directly through Meta's media publishing pipeline.
+                </div>
+
+                <div class="modal-footer" style="padding-top:10px;border-top:none;display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-outline-dark" onclick="closeSessionManagerModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toasts"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

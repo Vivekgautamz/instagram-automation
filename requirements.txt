@@ -1,0 +1,11 @@
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-dotenv>=1.0.0
+python-multipart>=0.0.9
+websockets>=12.0
+requests>=2.31.0
+yt-dlp>=2024.08.06
+instagrapi>=2.1.2
+pillow>=10.2.0
+imageio-ffmpeg>=0.4.9
+aiofiles>=23.0.0
