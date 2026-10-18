@@ -19,7 +19,8 @@ def publish_reel_container(video_url: str, caption: str) -> dict:
             "error": "Missing IG_USER_ID or FB_ACCESS_TOKEN in .env file."
         }
 
-    base_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{IG_USER_ID}"
+    host = "https://graph.instagram.com" if FB_ACCESS_TOKEN.startswith("IGAA") else "https://graph.facebook.com"
+    base_url = f"{host}/{GRAPH_API_VERSION}/{IG_USER_ID}"
 
     # 1. Initialize Container
     print("\n[*] Initializing media upload container on Instagram...")
@@ -42,7 +43,7 @@ def publish_reel_container(video_url: str, caption: str) -> dict:
     print(f"[*] Container created (ID: {container_id}). Uploading & processing on Instagram servers...")
 
     # 2. Status Polling
-    status_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{container_id}"
+    status_url = f"{host}/{GRAPH_API_VERSION}/{container_id}"
     for attempt in range(40):
         time.sleep(5)
         try:

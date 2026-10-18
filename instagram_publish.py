@@ -17,7 +17,8 @@ def publish_reel_to_instagram(video_url: str, caption: str) -> dict:
             "error": "Missing IG_USER_ID or FB_ACCESS_TOKEN in .env. Please configure your Meta Graph API credentials."
         }
 
-    base_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{IG_USER_ID}"
+    host = "https://graph.instagram.com" if FB_ACCESS_TOKEN.startswith("IGAA") else "https://graph.facebook.com"
+    base_url = f"{host}/{GRAPH_API_VERSION}/{IG_USER_ID}"
 
     # Step 1: Create media container for REELS
     container_endpoint = f"{base_url}/media"
@@ -39,7 +40,7 @@ def publish_reel_to_instagram(video_url: str, caption: str) -> dict:
     print(f"[*] Container created with ID: {creation_id}. Waiting for processing...")
 
     # Step 2: Poll status of the container until FINISHED
-    status_endpoint = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{creation_id}"
+    status_endpoint = f"{host}/{GRAPH_API_VERSION}/{creation_id}"
     status_params = {
         "fields": "status_code",
         "access_token": FB_ACCESS_TOKEN
